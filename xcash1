@@ -1,0 +1,121 @@
+# https://tea.xyz/what-is-this-file
+---
+version: 1.0.0
+codeOwners:
+  - '0x9e2d5031C2BD4A4Aa82751d4b20Bab475e152435'
+quorum: 1
+import pygame
+import random
+
+# 初始化pygame
+pygame.init()
+
+# 设置游戏窗口大小和标题
+window_width = 800
+window_height = 600
+window = pygame.display.set_mode((window_width, window_height))
+pygame.display.set_caption('贪吃蛇')
+
+# 定义颜色
+white = (255, 255, 255)
+black = (0, 0, 0)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+
+# 设置游戏参数
+block_size = 20
+clock = pygame.time.Clock()
+font = pygame.font.SysFont(None, 30)
+
+# 定义贪吃蛇类
+class Snake:
+    def __init__(self):
+        self.length = 1
+        self.positions = [((window_width / 2), (window_height / 2))]
+        self.direction = random.choice([pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT])
+        self.color = green
+
+    def get_head_position(self):
+        return self.positions[0]
+
+    def turn(self, point):
+        if self.length > 1 and (point[0] * -1, point[1] * -1) == self.direction:
+            return
+        else:
+            self.direction = point
+
+    def move(self):
+        cur = self.get_head_position()
+        x, y = self.direction
+        new = (((cur[0] + (x * block_size)) % window_width), (cur[1] + (y * block_size)) % window_height)
+        if len(self.positions) > 2 and new in self.positions[2:]:
+            self.reset()
+        else:
+            self.positions.insert(0, new)
+            if len(self.positions) > self.length:
+                self.positions.pop()
+
+    def reset(self):
+        self.length = 1
+        self.positions = [((window_width / 2), (window_height / 2))]
+        self.direction = random.choice([pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT])
+
+    def draw(self, surface):
+        for p in self.positions:
+            r = pygame.Rect((p[0], p[1]), (block_size, block_size))
+            pygame.draw.rect(surface, self.color, r)
+            pygame.draw.rect(surface, white, r, 1)
+
+    def handle_keys(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                elif event.key == pygame.K_UP:
+                    self.turn((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    self.turn((0, 1))
+                elif event.key == pygame.K_LEFT:
+                    self.turn((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    self.turn((1, 0))
+
+# 定义食物类
+class Food:
+    def __init__(self):
+        self.position = (0, 0)
+        self.color = red
+        self.randomize_position()
+
+    def randomize_position(self):
+        self.position = (random.randint(0, (window_width - block_size) // block_size) * block_size,
+                         random.randint(0, (window_height - block_size) // block_size) * block_size)
+
+    def draw(self, surface):
+        r = pygame.Rect((self.position[0], self.position[1]), (block_size, block_size))
+        pygame.draw.rect(surface, self.color, r)
+        pygame.draw.rect(surface, white, r, 1)
+
+def main():
+    snake = Snake()
+    food = Food()
+
+    while True:
+        window.fill(black)
+        snake.handle_keys()
+        snake.move()
+
+        if snake.get_head_position() == food.position:
+            snake.length += 1
+            food.randomize_position()
+
+        snake.draw(window)
+        food.draw(window)
+
+        pygame.display.update()
+        clock.tick(15)
+
+main()
